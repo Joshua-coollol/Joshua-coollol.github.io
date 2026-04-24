@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Baldi Style Dither Converter</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #222;
+      color: white;
+      text-align: center;
+      padding: 20px;
+    }
+
+    h1 {
+      color: #7cff4f;
+    }
+
+    canvas {
+      margin-top: 20px;
+      border: 3px solid #7cff4f;
+      image-rendering: pixelated;
+      max-width: 90%;
+    }
+
+    input, button {
+      margin: 10px;
+      padding: 10px;
+      font-size: 16px;
+      cursor: pointer;
+    }
+
+    button {
+      background: #7cff4f;
+      border: none;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+
+  <h1>Baldi Style Dither Converter</h1>
+
+  <input type="file" id="upload" accept="image/*">
+  <br>
+
+  <canvas id="canvas"></canvas>
+  <br>
+
+  <button id="download">Download Image</button>
+
+  <script>
+    const upload = document.getElementById("upload");
+    const canvas = document.getElementById("canvas");
+    const ctx = canvas.getContext("2d");
+    const downloadBtn = document.getElementById("download");
+
+    upload.addEventListener("change", function(event) {
+      const file = event.target.files[0];
+      if (!file) return;
+
+      const img = new Image();
+      img.onload = function() {
+        canvas.width = img.width;
+        canvas.height = img.height;
+
+        ctx.drawImage(img, 0, 0);
+
+        applyBaldiDither();
+      };
+
+      img.src = URL.createObjectURL(file);
+    });
+
+    function applyBaldiDither() {
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+
+      const ditherMatrix = [
+        [0, 8, 2, 10],
+        [12, 4, 14, 6],
+        [3, 11, 1, 9],
+        [15, 7, 13, 5]
+      ];
+
+      for (let y = 0; y < canvas.height; y++) {
+        for (let x = 0; x < canvas.width; x++) {
+          const index = (y * canvas.width + x) * 4;
+
+          let r = data[index];
+          let g = data[index + 1];
+          let b = data[index + 2];
+
+          const threshold = ditherMatrix[y % 4][x % 4] * 16;
+
+          r = Math.floor((r + threshold) / 64) * 64;
+          g = Math.floor((g + threshold) / 64) * 64;
+          b = Math.floor((b + threshold) / 64) * 64;
+
+          data[index] = Math.min(255, r);
+          data[index + 1] = Math.min(255, g);
+          data[index + 2] = Math.min(255, b);
+        }
+      }
+
+      ctx.putImageData(imageData, 0, 0);
+    }
+
+    downloadBtn.addEventListener("click", function() {
+      const link = document.createElement("a");
+      link.download = "baldi-dither-image.png";
+      link.href = canvas.toDataURL("image/png");
+      link.click();
+    });
+  </script>
+
+</body>
+</html>
